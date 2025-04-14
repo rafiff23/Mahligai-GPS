@@ -1,0 +1,33 @@
+name: Auto Deploy to DigitalOcean VPS
+
+on:
+  push:
+    branches:
+      - main  # Ganti jika kamu pakai branch lain
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.0
+        with:
+          host: 152.42.249.115
+          username: root
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            cd /root/FASTAPI-main || git clone git@github.com:USERNAME/Mahligai-GPS.git /root/FASTAPI-main && cd /root/FASTAPI-main
+            git pull origin main
+
+            python3 -m venv venv
+            source venv/bin/activate
+            pip install -r requirements.txt
+
+            echo "DB_URL=postgresql://trackeruser:rahasia123@localhost:5432/trackerdb" > .env
+
+            pkill uvicorn || true
+            nohup uvicorn main:app --host 0.0.0.0 --port 8000 > log.txt 2>&1 &
