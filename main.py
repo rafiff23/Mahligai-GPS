@@ -217,7 +217,7 @@ def get_latest_status(driver_id: int):
     finally:
         db.close()
 
-# === STATUS DRIVER: History ===
+# === STATUS DRIVER: History ==
 @app.get("/status-driver/history")
 def get_status_history(driver_id: int):
     db = SessionLocal()
