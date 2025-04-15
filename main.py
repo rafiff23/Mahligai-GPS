@@ -340,6 +340,37 @@ def get_latest_status_full(driver_id: int):
         return {"detail": "Data tidak ditemukan"}
     finally:
         db.close()
+# Edit Riwayat
+@app.post("/status-driver/edit")
+def edit_status_driver(
+    id: int = Form(...),
+    status_id: int = Form(...),
+    location: str = Form(...),
+    menunggu_surat_jalan: bool = Form(...),
+):
+    db = SessionLocal()
+    try:
+        db.execute(
+            text("""
+                UPDATE status_driver
+                SET 
+                    status_id = :status_id,
+                    location = :location,
+                    menunggu_surat_jalan = :menunggu_surat_jalan
+                WHERE id = :id
+            """),
+            {
+                "id": id,
+                "status_id": status_id,
+                "location": location,
+                "menunggu_surat_jalan": menunggu_surat_jalan
+            }
+        )
+        db.commit()
+        return {"message": "Berhasil diubah"}
+    finally:
+        db.close()
+
 
 # === UPDATE STATUS ===
 @app.post("/status-driver-update")
