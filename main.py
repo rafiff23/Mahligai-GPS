@@ -302,6 +302,44 @@ def debug_users():
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         db.close()
+        
+# === Status EKSPOR IMPOR ===
+@app.get("/status-driver/latest-full")
+def get_latest_status_full(driver_id: int):
+    db = SessionLocal()
+    try:
+        result = db.execute(
+            text("""
+                SELECT 
+                    sd.driver_id,
+                    sd.perusahaan_id,
+                    sd.ukuran_container_id,
+                    sd.ekspor_impor_id,
+                    sd.status_id,
+                    sd.menunggu_surat_jalan,
+                    sp.status
+                FROM status_driver sd
+                JOIN status_perjalanan sp ON sd.status_id = sp.id
+                WHERE sd.driver_id = :driver_id
+                ORDER BY sd.date DESC, sd.time DESC
+                LIMIT 1
+            """),
+            {"driver_id": driver_id}
+        ).fetchone()
+
+        if result:
+            return {
+                "driver_id": result[0],
+                "perusahaan_id": result[1],
+                "ukuran_container_id": result[2],
+                "ekspor_impor_id": result[3],
+                "status_id": result[4],
+                "menunggu_surat_jalan": result[5],
+                "status_name": result[6],
+            }
+        return {"detail": "Data tidak ditemukan"}
+    finally:
+        db.close()
 
 # === UPDATE STATUS ===
 @app.post("/status-driver-update")
