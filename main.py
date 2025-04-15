@@ -225,6 +225,7 @@ def get_status_history(driver_id: int):
         result = db.execute(
             text("""
                 SELECT 
+                    sd.id,
                     sd.date, 
                     p.nama_perusahaan, 
                     sp.status,
@@ -239,10 +240,11 @@ def get_status_history(driver_id: int):
         ).fetchall()
         return [
             {
-                "tanggal": getattr(row[0], "strftime", lambda fmt: row[0])("%Y-%m-%d"),
-                "nama_perusahaan": row[1],
-                "status": row[2],
-                "location": row[3]
+                "id": row[0],
+                "tanggal": getattr(row[1], "strftime", lambda fmt: row[1])("%Y-%m-%d"),
+                "nama_perusahaan": row[2],
+                "status": row[3],
+                "location": row[4]
             }
             for row in result
         ]
