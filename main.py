@@ -394,6 +394,7 @@ def update_status_driver(
                     :menunggu_surat_jalan
                 FROM status_driver sd
                 WHERE sd.driver_id = :driver_id
+                    AND sd.status_id != 9
                 ORDER BY date DESC, time DESC
                 LIMIT 1
             """),
