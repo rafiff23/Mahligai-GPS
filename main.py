@@ -346,9 +346,7 @@ def get_latest_status_full(driver_id: int):
 @app.post("/status-driver/edit")
 def edit_status_driver(
     id: int = Form(...),
-    status_id: int = Form(...),
-    location: str = Form(...),
-    menunggu_surat_jalan: bool = Form(...),
+    status_id: int = Form(...)
 ):
     db = SessionLocal()
     try:
@@ -356,16 +354,12 @@ def edit_status_driver(
             text("""
                 UPDATE status_driver
                 SET 
-                    status_id = :status_id,
-                    location = :location,
-                    menunggu_surat_jalan = :menunggu_surat_jalan
+                    status_id = :status_id
                 WHERE id = :id
             """),
             {
                 "id": id,
-                "status_id": status_id,
-                "location": location,
-                "menunggu_surat_jalan": menunggu_surat_jalan
+                "status_id": status_id
             }
         )
         db.commit()
