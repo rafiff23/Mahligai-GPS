@@ -342,7 +342,8 @@ def get_latest_status_full(driver_id: int):
         return {"detail": "Data tidak ditemukan"}
     finally:
         db.close()
-# Edit Riwayat
+
+# Edit Riwayatt
 @app.post("/status-driver/edit")
 def edit_status_driver(
     id: int = Form(...),
