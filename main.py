@@ -203,7 +203,7 @@ def get_latest_status(driver_id: int):
                 SELECT sd.status_id, sp.status
                 FROM status_driver sd
                 JOIN status_perjalanan sp ON sd.status_id = sp.id
-                WHERE sd.driver_id = :driver_id
+                WHERE sd.driver_id = :driver_id AND sd.is_active = true
                 ORDER BY sd.id DESC
                 LIMIT 1
             """),
