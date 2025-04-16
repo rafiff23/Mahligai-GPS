@@ -129,22 +129,15 @@ def create_status_driver(data: StatusDriverData):
 
 # === STATUS DRIVER: Upload with Files ===
 @app.post("/status-driver-upload")
-async def create_status_driver_upload(
-    driver_id: int = Form(...),
-    perusahaan_id: int = Form(...),
-    location: str = Form(...),
-    ukuran_container_id: int = Form(...),
-    ekspor_impor_id: int = Form(...),
-    status_id: int = Form(...),
-    menunggu_surat_jalan: Optional[bool] = Form(None),
-    foto_depan: UploadFile = File(None),
-    foto_belakang: UploadFile = File(None),
-    foto_kiri: UploadFile = File(None),
-    foto_kanan: UploadFile = File(None),
-    dokumen_seal: UploadFile = File(None),
-):
+async def create_status_driver_upload(...):
     db = SessionLocal()
     try:
+        # 🔒 Matikan semua entry aktif sebelumnya
+        db.execute(
+            text("UPDATE status_driver SET is_active = false WHERE driver_id = :driver_id"),
+            {"driver_id": driver_id}
+        )
+
         def save_file(file: UploadFile):
             if file:
                 file_path = os.path.join(UPLOAD_FOLDER, file.filename)
@@ -165,14 +158,16 @@ async def create_status_driver_upload(
                     driver_id, perusahaan_id, location, date, time,
                     ukuran_container_id, ekspor_impor_id,
                     status_id, status_color_id, menunggu_surat_jalan,
-                    foto_depan, foto_belakang, foto_kiri, foto_kanan, dokumen_seal
+                    foto_depan, foto_belakang, foto_kiri, foto_kanan, dokumen_seal,
+                    is_active
                 ) VALUES (
                     :driver_id, :perusahaan_id, :location, :date, :time,
                     :ukuran_container_id, :ekspor_impor_id,
                     :status_id,
                     (SELECT status_color_id FROM status_mapping WHERE ekspor_impor_id = :ekspor_impor_id AND status_id = :status_id),
                     :menunggu_surat_jalan,
-                    :fd, :fb, :fk, :fr, :ds
+                    :fd, :fb, :fk, :fr, :ds,
+                    true
                 )
             """),
             {
@@ -188,6 +183,7 @@ async def create_status_driver_upload(
                 "fd": fd, "fb": fb, "fk": fk, "fr": fr, "ds": ds
             }
         )
+
         db.commit()
         return {"message": "Status + file created"}
     except Exception as e:
@@ -195,6 +191,7 @@ async def create_status_driver_upload(
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         db.close()
+
 
 # === STATUS DRIVER: Latest ===
 @app.get("/status-driver/latest")
@@ -206,7 +203,7 @@ def get_latest_status(driver_id: int):
                 SELECT sd.status_id, sp.status
                 FROM status_driver sd
                 JOIN status_perjalanan sp ON sd.status_id = sp.id
-                WHERE sd.driver_id = :driver_id
+                WHERE sd.driver_id = :driver_id AND sd.is_active = true
                 ORDER BY sd.id DESC
                 LIMIT 1
             """),
@@ -371,12 +368,7 @@ def edit_status_driver(
 
 # === UPDATE STATUS ===
 @app.post("/status-driver-update")
-def update_status_driver(
-    driver_id: int = Form(...),
-    status_id: int = Form(...),
-    menunggu_surat_jalan: bool = Form(...),
-    location: str = Form(...),
-):
+def update_status_driver(...):
     db = SessionLocal()
     try:
         db.execute(
@@ -384,17 +376,18 @@ def update_status_driver(
                 INSERT INTO status_driver (
                     driver_id, perusahaan_id, location, date, time,
                     ukuran_container_id, ekspor_impor_id,
-                    status_id, status_color_id, menunggu_surat_jalan
+                    status_id, status_color_id, menunggu_surat_jalan,
+                    is_active
                 )
                 SELECT
                     sd.driver_id, sd.perusahaan_id, :location, :date, :time,
                     sd.ukuran_container_id, sd.ekspor_impor_id,
                     :status_id,
                     (SELECT status_color_id FROM status_mapping WHERE ekspor_impor_id = sd.ekspor_impor_id AND status_id = :status_id),
-                    :menunggu_surat_jalan
+                    :menunggu_surat_jalan,
+                    true
                 FROM status_driver sd
-                WHERE sd.driver_id = :driver_id
-                    AND sd.status_id != 9
+                WHERE sd.driver_id = :driver_id AND sd.is_active = true
                 ORDER BY date DESC, time DESC
                 LIMIT 1
             """),
@@ -402,17 +395,27 @@ def update_status_driver(
                 "driver_id": driver_id,
                 "status_id": status_id,
                 "location": location,
-                "date": datetime.now(JAKARTA).date(),      
+                "date": datetime.now(JAKARTA).date(),
                 "time": datetime.now(JAKARTA).time().replace(tzinfo=None),
                 "menunggu_surat_jalan": menunggu_surat_jalan,
             }
         )
+
+        # ❌ Kalau status selesai, nonaktifkan entry aktif
+        if status_id == 9:
+            db.execute(
+                text("UPDATE status_driver SET is_active = false WHERE driver_id = :driver_id AND is_active = true"),
+                {"driver_id": driver_id}
+            )
+
         db.commit()
         return {"message": "Status updated"}
     except Exception as e:
+        db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         db.close()
+
 
 # === Run locally ===
 if __name__ == "__main__":
