@@ -207,7 +207,7 @@ def get_latest_status(driver_id: int):
                 FROM status_driver sd
                 JOIN status_perjalanan sp ON sd.status_id = sp.id
                 WHERE sd.driver_id = :driver_id
-                ORDER BY sd.date DESC, sd.time DESC
+                ORDER BY sd.id DESC
                 LIMIT 1
             """),
             {"driver_id": driver_id}
