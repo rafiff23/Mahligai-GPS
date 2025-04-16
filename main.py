@@ -129,10 +129,23 @@ def create_status_driver(data: StatusDriverData):
 
 # === STATUS DRIVER: Upload with Files ===
 @app.post("/status-driver-upload")
-async def create_status_driver_upload(...):
+async def create_status_driver_upload(
+    driver_id: int = Form(...),
+    perusahaan_id: int = Form(...),
+    location: str = Form(...),
+    ukuran_container_id: int = Form(...),
+    ekspor_impor_id: int = Form(...),
+    status_id: int = Form(...),
+    menunggu_surat_jalan: Optional[bool] = Form(None),
+    foto_depan: UploadFile = File(None),
+    foto_belakang: UploadFile = File(None),
+    foto_kiri: UploadFile = File(None),
+    foto_kanan: UploadFile = File(None),
+    dokumen_seal: UploadFile = File(None),
+):
     db = SessionLocal()
     try:
-        # 🔒 Matikan semua entry aktif sebelumnya
+        # 🔒 Nonaktifkan entry aktif sebelumnya
         db.execute(
             text("UPDATE status_driver SET is_active = false WHERE driver_id = :driver_id"),
             {"driver_id": driver_id}
@@ -191,6 +204,7 @@ async def create_status_driver_upload(...):
         raise HTTPException(status_code=500, detail=str(e))
     finally:
         db.close()
+
 
 
 # === STATUS DRIVER: Latest ===
